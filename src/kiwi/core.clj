@@ -2,6 +2,8 @@
   (:gen-class)
   (:require
    [seesaw.core :as seesaw]
+   [seesaw.bind :as bind]
+   [seesaw.clipboard :as clip]
    [kiwi.gui :as gui])
   (:import java.awt.Toolkit)
   (:import java.awt.datatransfer.Clipboard)
@@ -15,44 +17,42 @@
 (defn get-current-clipping [clipboard]
   (str (. (. clipboard (getContents nil) ) getTransferData (. DataFlavor stringFlavor))))
 
-(defn updated-clipboard? [prev curr]
-  (not= prev curr))
+(defn clipboard-watch
+  [clip-hist key identity old new]
+  (when-not (= new old)
+      (swap! clip-hist conj new)))
+      ;(println "something new in clipboard: " old " => " new))
+    ;(println "nothing new in clipboard: " old " => " new)))
 
-(defn update-clip-hist [curr clip-hist]
-  (conj curr clip-hist)
-  ;(map #(println " " + %) clip-hist)
-  )
+(defn test-and-update
+  [prev-clipboard]
+   (do
+    (. Thread (sleep 550))
+     (reset! prev-clipboard (clip/contents))
+     (recur prev-clipboard)))
 
 (defn -main
   [& args]
   (let [clipboard (. (Toolkit/getDefaultToolkit)
                      (getSystemClipboard))
-        curr-clipboard (get-current-clipping clipboard)  ;curr-clipboard (atom (. clipboard (getContents nil)))
+        ;curr-clipboard (get-current-clipping clipboard)  ;curr-clipboard (atom (. clipboard (getContents nil)))
         prev-clipboard (atom  "")
         clip-hist (atom (vector nil))
-        ]
+        clip-container (agent [])
+        active-list (seesaw/listbox)]
+    (add-watch prev-clipboard :clip (partial clipboard-watch clip-hist))
+    (gui/run clip-hist active-list)
+    (bind/bind (bind/transform (clip/contents)) (bind/b-send clip-container conj))
+    (bind/bind clip-hist (bind/property active-list :model))
+    (test-and-update prev-clipboard)))
+     ;(while true
+      ;(repeatedly
+       ;(. Thread (sleep 550))
+       ;(try
+       ;  (reset! prev-clipboard (clip/contents)) ;(get-current-clipping clipboard))
+       ;  (catch Exception e (println (.getMessage e)))
+       ;  )
+    ;(dorun
+    ; (repeatedly
+    ;  (test-and-update prev-clipboard)
 
-     (gui/run)
-     (while true
-       ;(println (updated-clipboard? @prev-clipboard (get-current-clipping clipboard)))
-       (println  (. clipboard (isDataFlavorAvailable (. DataFlavor stringFlavor))))
-         (. Thread (sleep 250))
-        (try
-         (when (and
-                (updated-clipboard? @prev-clipboard (get-current-clipping clipboard))
-                ;(and
-                 (. clipboard (isDataFlavorAvailable (. DataFlavor stringFlavor)))
-                 ;(.) )
-                )
-           (do
-             (swap! clip-hist conj (get-current-clipping clipboard))
-             (swap! prev-clipboard (constantly (get-current-clipping clipboard)))
-             (println (last @clip-hist))
-             )
-           )
-         (catch Exception e (println (str "caught exception: " (.getMessage e)))))
-       ))
-  )
-
-
-  ;((String) clipboard.getContents(null).getTransferData(DataFlavor.stringFlavor)))
