@@ -11,8 +11,7 @@
   (:import java.awt.datatransfer.FlavorEvent)
   (:import java.awt.datatransfer.FlavorListener)
   (:import java.awt.datatransfer.Transferable)
-  (:import java.awt.datatransfer.UnsupportedFlavorException)
-  )
+  (:import java.awt.datatransfer.UnsupportedFlavorException))
 
 (defn get-current-clipping [clipboard]
   (str (. (. clipboard (getContents nil) ) getTransferData (. DataFlavor stringFlavor))))
@@ -25,34 +24,23 @@
     ;(println "nothing new in clipboard: " old " => " new)))
 
 (defn test-and-update
-  [prev-clipboard]
+  [curr-clipboard off-atom]
+  (if off-atom nil) ;;To be implemented as a signal the GUI can pass to cease execution of main listen loop.
    (do
     (. Thread (sleep 550))
-     (reset! prev-clipboard (clip/contents))
-     (recur prev-clipboard)))
+     (reset! curr-clipboard (clip/contents))
+     (recur curr-clipboard off-atom)))
 
 (defn -main
   [& args]
-  (let [clipboard (. (Toolkit/getDefaultToolkit)
-                     (getSystemClipboard))
-        ;curr-clipboard (get-current-clipping clipboard)  ;curr-clipboard (atom (. clipboard (getContents nil)))
-        prev-clipboard (atom  "")
+  (let [clipboard (clip/contents)
+        curr-clipboard (atom  "")
         clip-hist (atom (vector nil))
         clip-container (agent [])
         active-list (seesaw/listbox)]
-    (add-watch prev-clipboard :clip (partial clipboard-watch clip-hist))
+    (add-watch curr-clipboard :clip (partial clipboard-watch clip-hist))
     (gui/run clip-hist active-list)
-    (bind/bind (bind/transform (clip/contents)) (bind/b-send clip-container conj))
+    ;(bind/bind (bind/transform (clip/contents)) (bind/b-send clip-container conj))
     (bind/bind clip-hist (bind/property active-list :model))
-    (test-and-update prev-clipboard)))
-     ;(while true
-      ;(repeatedly
-       ;(. Thread (sleep 550))
-       ;(try
-       ;  (reset! prev-clipboard (clip/contents)) ;(get-current-clipping clipboard))
-       ;  (catch Exception e (println (.getMessage e)))
-       ;  )
-    ;(dorun
-    ; (repeatedly
-    ;  (test-and-update prev-clipboard)
+    (test-and-update curr-clipboard false)))
 
