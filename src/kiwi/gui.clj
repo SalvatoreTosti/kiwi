@@ -6,26 +6,17 @@
 
 (defn update-gui [atom-list active-list]
   (seesaw/config! active-list
-                        :model @atom-list)
-  )
-
-#_(defn build-content [atom-list active-list]
-  (let [text (seesaw/text
-              :text "test"
-              :margin 10)
-        (seesaw/config! active-list
-                        :model @atom-list)
-        ]
-    display-list))
+                        :model @atom-list))
 
 (defn display [content]
-  "General display function, based on lecture slides, builds Jframe for program."
+  "General display function, based on Roger Whitney's lecture slides, builds Jframe for program."
   (let [window (seesaw/frame
-                :title "Fuji"
+                :title "Kiwi"
                 :on-close :exit
                 :content content
                 :width 425 ;850
                 :height 550)] ;1100)
+    (seesaw/native!)
     (seesaw/show! window)))
 
 (defn run [atom-list active-list]

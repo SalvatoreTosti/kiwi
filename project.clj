@@ -6,5 +6,6 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [seesaw "1.4.4"]]
   :main ^:skip-aot kiwi.core
+  :aot [kiwi.run]
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})
