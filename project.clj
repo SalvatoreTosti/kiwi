@@ -5,6 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [seesaw "1.4.4"]]
+  :plugins [[lein-kibit "0.1.2"]]
   :main ^:skip-aot kiwi.core
   :aot [kiwi.run]
   :target-path "target/%s"
