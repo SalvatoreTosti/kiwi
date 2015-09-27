@@ -16,7 +16,7 @@
                 :content content
                 :width 425 ;850
                 :height 550)] ;1100)
-    (seesaw/native!)
+    ;(seesaw/native!)
     (seesaw/show! window)))
 
 (defn run [atom-list active-list]

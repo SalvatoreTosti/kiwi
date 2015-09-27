@@ -1,5 +1,3 @@
-
-
 (ns kiwi.core
   (:gen-class)
   (:require
@@ -18,15 +16,6 @@
   ;(:import java.awt.datatansfer.Transferable)
   (:import java.awt.datatransfer.UnsupportedFlavorException))
 
-#_(defn clip-owner []
-(reify
-  java.awt.datatransfer.ClipboardOwner
-  (lostOwnership [this clipboard contents]
-                 (println "inside clip-owner")
-                 ;(. Thread (sleep 200))
-                 (clip/contents! (clip/contents) this)
-                 this)))
-
 (defn vector-remove
   [vect position]
   "zero-based item removal from a vector."
@@ -34,14 +23,14 @@
      ;(zero? position) (subvec vect 1)
      (= position (count vect)) (subvec vect 0 (dec (count vect)))
      :else
-     (vec (concat (subvec vect 0 (- position 1)) (subvec vect position (count vect))))
+     (vec (concat (subvec vect 0 (dec position)) (subvec vect position (count vect))))
      ))
 
 (defn move-to-head
   [vect position]
   "Moves element from position in vect to front of vector, 0 based."
   (let [select (vect position)]
-    (->> (vector-remove vect (+ 1 position))
+    (->> (vector-remove vect (inc position))
         (into (vector select))
   )))
 
@@ -86,8 +75,9 @@
   (if off-atom nil) ;;To be implemented as a signal the GUI can pass to cease execution of main listen loop.
    (do
      (. Thread (sleep 550))
-     (reset! curr-clipboard (clip/contents))
+     (swap! curr-clipboard (constantly (str (clip/contents))))
      ;(clip/contents! (clip/contents))
+     (println (clip/contents))
      (recur curr-clipboard off-atom)))
 
 (defn -main
@@ -95,8 +85,6 @@
   (let [curr-clipboard (atom  (clip/contents))
         clip-hist (atom (vector @curr-clipboard))
         active-list (seesaw/listbox)]
-    (def x (kiwi.run.testy.))
-    (.testyWest x)
     (seesaw/listen active-list
                    :mouse-clicked (fn[e]
                                 (let [curr-contents (clip/contents)
@@ -110,7 +98,14 @@
                                        ;(first )
                                        ;(seesaw/selection! active-list )
                                        ;)
+
+                                      ;(. Thread (sleep 3000))
+                                      (println "testing click behavior")
+                                      (println select)
+                                      ;(. Thread (sleep 250))
                                       (clip/contents! select)
+
+
                                       ;(clip/contents)
                                       )
                                       ;(seesaw/selection! active-list nil)
