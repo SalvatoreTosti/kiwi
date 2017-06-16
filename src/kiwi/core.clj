@@ -34,9 +34,9 @@
         (into (vector select))
   )))
 
-(defn in-vector? [vect x]
+(defn vec-contains? [vect x]
   "Determines if x is an element of vect."
-  (>= (.indexOf vect x) 0))
+  (pos? (.indexOf vect x)))
 
 (defn front-conj-no-dup
   "Adds a new element to the front of a coll, will return current coll if element is already present."
@@ -51,7 +51,7 @@
   TODO: not entirely satisfied with this function, should be revisited."
   [clip-hist new]
   (let [full (>= (count clip-hist) 5)
-        duplicate (in-vector? clip-hist new)]
+        duplicate (vec-contains? clip-hist new)]
     (cond
      (and full (not duplicate))  ;duplicate must be explicitly checked here to avoid dropping, then attempting to insert a duplicate.
        (-> (drop-last clip-hist)
@@ -64,59 +64,35 @@
 
 (defn clipboard-watch
   "Watches for changes in current clipping, then dispatches to handle-new-clipping to evaluate action."
-  [clip-hist key identity old new]
+  [*clip-hist key identity old new]
   (when-not (= new old)
     (println "Something new! " new " old: " old)
-    ;(swap! clip-hist handle-new-clipping new)))
-     (swap! clip-hist front-conj-no-dup new)))
+     (swap! *clip-hist front-conj-no-dup new)))
 
 (defn test-and-update
-  [curr-clipboard off-atom]
+  "Updates "
+  [*curr-clipboard off-atom]
   (if off-atom nil) ;;To be implemented as a signal the GUI can pass to cease execution of main listen loop.
    (do
      (. Thread (sleep 550))
-     (swap! curr-clipboard (constantly (str (clip/contents))))
-     ;(clip/contents! (clip/contents))
+     (swap! *curr-clipboard (constantly (str (clip/contents))))
      (println (clip/contents))
-     (recur curr-clipboard off-atom)))
+     (recur *curr-clipboard off-atom)))
 
 (defn -main
   [& args]
-  (let [curr-clipboard (atom  (clip/contents))
-        clip-hist (atom (vector @curr-clipboard))
+  (let [*curr-clipboard (atom  (clip/contents))
+        *clip-hist (atom (vector @*curr-clipboard))
         active-list (seesaw/listbox)]
     (seesaw/listen active-list
-                   :mouse-clicked (fn[e]
-                                (let [curr-contents (clip/contents)
-                                      select (str (seesaw/selection active-list))
-                                      select-raw (seesaw/selection active-list)
-                                      index (.indexOf @clip-hist select)]
-                                  (if (>= index 0)
-                                    (do
-                                      ;(->>
-                                       ;(swap! clip-hist move-to-head index)
-                                       ;(first )
-                                       ;(seesaw/selection! active-list )
-                                       ;)
+                   :mouse-clicked
+                   (fn[e] (clip/contents! (str (seesaw/selection active-list))))
+                   :focus-lost (fn[e]
+                                 (seesaw/selection! active-list nil)
+                                 )
+                   )
 
-                                      ;(. Thread (sleep 3000))
-                                      (println "testing click behavior")
-                                      (println select)
-                                      ;(. Thread (sleep 250))
-                                      (clip/contents! select)
-
-
-                                      ;(clip/contents)
-                                      )
-                                      ;(seesaw/selection! active-list nil)
-
-                                      ;(println (str (seesaw/selection active-list)))
-
-                                    )
-                                  )))
-    (add-watch curr-clipboard :clip (partial clipboard-watch clip-hist))
-    (gui/run clip-hist active-list)
-    ;(bind/bind (bind/transform (clip/contents)) (bind/b-send clip-container conj))
-    (bind/bind clip-hist (bind/property active-list :model))
-    (test-and-update curr-clipboard false)))
-
+    (add-watch *curr-clipboard :clip (partial clipboard-watch *clip-hist))
+    (gui/run *clip-hist active-list)
+    (bind/bind *clip-hist (bind/property active-list :model))
+    (test-and-update *curr-clipboard false)))
